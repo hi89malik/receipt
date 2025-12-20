@@ -9,9 +9,12 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    # Your live Vercel URL (I added the https:// part for you)
+    # Long version
     "https://receipt-j8rf-ogvjok7t8-ahmed-maliks-projects-906fba3a.vercel.app",
-    "https://receipt-j8rf-ogvjok7t8-ahmed-maliks-projects-906fba3a.vercel.app/"
+    # Short version (Check your browser address bar to be sure, likely this one)
+    "https://receipt-j8rf.vercel.app", 
+    # General match for all Vercel subdomains (Regex is harder, so we list common ones)
+    "https://receipt-tracker.vercel.app" 
 ]
 
 app.add_middleware(
