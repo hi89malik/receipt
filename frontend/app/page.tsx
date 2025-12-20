@@ -16,7 +16,6 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Effect to simulate progress when loading starts
   useEffect(() => {
@@ -50,12 +49,17 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/upload', {
+      // FIX: Use the Environment Variable, or fallback to localhost for dev
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+      const response = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to analyze receipt');
+      if (!response.ok) {
+        throw new Error('Failed to analyze receipt');
+      }
 
       setProgress(100);
       const data: ReceiptItem[] = await response.json();

@@ -9,6 +9,9 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    # Your live Vercel URL (I added the https:// part for you)
+    "https://receipt-j8rf-ogvjok7t8-ahmed-maliks-projects-906fba3a.vercel.app",
+    "https://receipt-j8rf-ogvjok7t8-ahmed-maliks-projects-906fba3a.vercel.app/"
 ]
 
 app.add_middleware(
