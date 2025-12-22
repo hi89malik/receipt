@@ -5,7 +5,7 @@ from PIL import Image
 import io
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 # Configure the Gemini API
@@ -17,40 +17,61 @@ genai.configure(api_key=api_key)
 
 def clean_json_text(text):
     """
-    Helper to strip markdown code blocks if the LLM includes them.
-    Ex: removes ```json and ``` 
+    Clean the response text to ensure we get valid JSON.
+    Removes markdown formatting like ```json ... ```
     """
     cleaned = text.replace("```json", "").replace("```", "").strip()
     return cleaned
 
 async def analyze_receipt(image_bytes):
     try:
-        # Use Gemini 1.5 Flash (Optimized for speed/cost)
+        # UPDATED: Using Gemini 3 Flash Preview (Released Dec 2025)
+        # This model has "Thinking" capabilities for better reasoning.
         model = genai.GenerativeModel('gemini-3-flash-preview')
         
-        # Convert raw bytes to a PIL Image
         image = Image.open(io.BytesIO(image_bytes))
 
+        # --- REFINED PROMPT FOR PRECISION ---
         prompt = """
-        Analyze this image of a grocery receipt. 
-        Extract the food items. Ignore taxes, subtotals, and non-food items (like 'coupons' or 'fuel').
+        You are an expert Food Safety & Inventory Specialist. 
+        Analyze this grocery receipt image and extract food items.
+
+        RULES:
+        1. Identify the specific product (e.g., convert "FV ICE COFF" to "French Vanilla Iced Coffee").
+        2. Determine the STORAGE LOCATION: 'Pantry', 'Fridge', or 'Freezer'.
+        3. Estimate 'shelf_life_days' based on UNOPENED safety guidelines.
+           - CRITICAL: If an item is commonly refrigerated (like Milk, Juice, Iced Coffee jugs), assume it is PERISHABLE.
+           - Be conservative. If unsure, choose the safer (shorter) date.
+           - Context Clues: 
+             * 'FV ICE COFF' ($10+) is likely a refrigerated jug -> 14 days (Fridge).
+             * 'COKE' is shelf stable -> 180 days (Pantry).
+             * 'CHOC' is shelf stable -> 365 days (Pantry).
+        4. Categorize broadly (Produce, Dairy, Snacks, Beverages, Meat, Bakery).
+        5. Ignore taxes, fees (like 'NY DEP FEE'), and non-food items.
+
+        Return strictly a JSON list. No markdown, no conversational text.
         
-        For each item, estimate a 'shelf_life_days' (integer) based on general food safety.
-        
-        Return the result as a STRICT JSON list. 
-        Do not add any conversational text before or after the JSON.
-        
-        Example format:
+        Example Output Format:
         [
-            {"item": "Bananas", "shelf_life_days": 5, "category": "Produce", "quantity": 1},
-            {"item": "Milk", "shelf_life_days": 7, "category": "Dairy", "quantity": 1}
+            {
+                "item": "French Vanilla Iced Coffee",
+                "category": "Dairy/Beverage",
+                "storage": "Fridge",
+                "shelf_life_days": 14,
+                "reasoning": "Refrigerated coffee creamer/drink, expires quickly."
+            },
+            {
+                "item": "Potato Chips",
+                "category": "Snacks",
+                "storage": "Pantry",
+                "shelf_life_days": 90,
+                "reasoning": "Fried shelf-stable snack."
+            }
         ]
         """
 
-        # Generate the content
         response = model.generate_content([prompt, image])
         
-        # Clean and Parse
         json_text = clean_json_text(response.text)
         data = json.loads(json_text)
         
@@ -58,4 +79,5 @@ async def analyze_receipt(image_bytes):
 
     except Exception as e:
         print(f"Error processing receipt: {e}")
-        return {"error": "Failed to process receipt", "details": str(e)}
+        # Return a safe error object so the frontend doesn't crash
+        return [{"item": "Error parsing receipt", "category": "Error", "shelf_life_days": 0, "storage": "None"}]
