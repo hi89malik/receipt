@@ -32,7 +32,7 @@ Standard barcode lookups fail on internal store codes (like Target DPCI). I engi
 
 * **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, Lucide React.
 * **Backend:** Python 3.9+, FastAPI, Uvicorn.
-* **AI/ML:** Google Gemini 1.5/3 Flash, Pillow (Image Processing).
+* **AI/ML:** Google Gemini 3 Flash, Pillow (Image Processing).
 * **Data Enrichment:** `duckduckgo-search` (Web Scraping), `httpx` (Async HTTP requests).
 
 ## 🏗️ Architecture
